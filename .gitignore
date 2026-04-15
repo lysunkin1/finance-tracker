@@ -25,7 +25,6 @@ build/
 *.swo
 
 # Alembic
-alembic/versions/*.py
 !alembic/versions/.gitkeep
 
 # Testing
