@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Tracker — Categories</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+<div id="nav"></div>
+
+<main class="ml-64 min-h-screen p-8">
+<div class="max-w-4xl mx-auto">
+
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold text-gray-900">Categories</h1>
+        <p class="text-gray-500 text-sm mt-0.5">Organize your transactions by category</p>
+    </div>
+
+    <div class="grid grid-cols-2 gap-6">
+
+        <!-- Income Categories -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+            <div class="p-5 border-b border-gray-100 flex items-center gap-3">
+                <span class="w-8 h-8 bg-green-100 rounded-xl flex items-center justify-center text-base">📈</span>
+                <h2 class="font-bold text-gray-900">Income</h2>
+            </div>
+            <!-- Add form -->
+            <div class="p-4 border-b border-gray-100">
+                <div class="flex gap-2">
+                    <input type="text" id="new-income-name" placeholder="Category name" maxlength="100"
+                        class="flex-1 px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                        onkeydown="if(event.key==='Enter'){addCategory('income')}">
+                    <button onclick="addCategory('income')"
+                        class="px-4 py-2 bg-green-600 text-white rounded-xl text-sm font-medium hover:bg-green-700 transition-colors">
+                        Add
+                    </button>
+                </div>
+            </div>
+            <ul id="income-list" class="divide-y divide-gray-50 min-h-[80px]">
+                <li class="p-4 text-gray-400 text-sm text-center">Loading…</li>
+            </ul>
+        </div>
+
+        <!-- Expense Categories -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+            <div class="p-5 border-b border-gray-100 flex items-center gap-3">
+                <span class="w-8 h-8 bg-red-100 rounded-xl flex items-center justify-center text-base">📉</span>
+                <h2 class="font-bold text-gray-900">Expense</h2>
+            </div>
+            <div class="p-4 border-b border-gray-100">
+                <div class="flex gap-2">
+                    <input type="text" id="new-expense-name" placeholder="Category name" maxlength="100"
+                        class="flex-1 px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                        onkeydown="if(event.key==='Enter'){addCategory('expense')}">
+                    <button onclick="addCategory('expense')"
+                        class="px-4 py-2 bg-red-500 text-white rounded-xl text-sm font-medium hover:bg-red-600 transition-colors">
+                        Add
+                    </button>
+                </div>
+            </div>
+            <ul id="expense-list" class="divide-y divide-gray-50 min-h-[80px]">
+                <li class="p-4 text-gray-400 text-sm text-center">Loading…</li>
+            </ul>
+        </div>
+
+    </div>
+</div>
+</main>
+
+<!-- Edit modal -->
+<div id="edit-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+        <h3 class="font-bold text-gray-900 mb-4">Rename Category</h3>
+        <input type="text" id="edit-name" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4">
+        <div class="flex gap-3">
+            <button onclick="closeEditModal()" class="flex-1 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50">Cancel</button>
+            <button onclick="saveEdit()" class="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700">Save</button>
+        </div>
+    </div>
+</div>
+
+<script src="/ui/js/api.js"></script>
+<script>
+    requireAuth();
+    renderNav('categories');
+
+    let editingId = null;
+
+    async function loadCategories() {
+        try {
+            const cats = await api.get('/categories/');
+            render('income-list',  cats.filter(c => c.type === 'income'),  'income');
+            render('expense-list', cats.filter(c => c.type === 'expense'), 'expense');
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    }
+
+    function render(listId, cats, type) {
+        const ul = document.getElementById(listId);
+        if (!cats.length) {
+            ul.innerHTML = `<li class="p-4 text-gray-400 text-sm text-center">No ${type} categories yet</li>`;
+            return;
+        }
+        ul.innerHTML = cats.map(c => `
+            <li class="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors">
+                <span class="text-sm font-medium text-gray-800">${c.name}</span>
+                <div class="flex items-center gap-2">
+                    <button onclick="openEditModal(${c.id}, '${c.name.replace(/'/g, "\\'")}')"
+                        class="text-xs text-blue-500 hover:text-blue-700 font-medium px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors">
+                        Rename
+                    </button>
+                    <button onclick="deleteCategory(${c.id})"
+                        class="text-xs text-red-500 hover:text-red-700 font-medium px-2 py-1 rounded-lg hover:bg-red-50 transition-colors">
+                        Delete
+                    </button>
+                </div>
+            </li>`).join('');
+    }
+
+    async function addCategory(type) {
+        const input = document.getElementById(`new-${type}-name`);
+        const name  = input.value.trim();
+        if (!name) return;
+        try {
+            await api.post('/categories/', { name, type });
+            input.value = '';
+            showToast('Category added');
+            loadCategories();
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    }
+
+    async function deleteCategory(id) {
+        if (!confirm('Delete this category? Transactions will become uncategorized.')) return;
+        try {
+            await api.delete(`/categories/${id}`);
+            showToast('Category deleted');
+            loadCategories();
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    }
+
+    function openEditModal(id, name) {
+        editingId = id;
+        document.getElementById('edit-name').value = name;
+        document.getElementById('edit-modal').classList.remove('hidden');
+        document.getElementById('edit-name').focus();
+    }
+    function closeEditModal() {
+        document.getElementById('edit-modal').classList.add('hidden');
+        editingId = null;
+    }
+    async function saveEdit() {
+        const name = document.getElementById('edit-name').value.trim();
+        if (!name || !editingId) return;
+        try {
+            await api.patch(`/categories/${editingId}`, { name });
+            showToast('Category renamed');
+            closeEditModal();
+            loadCategories();
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    }
+
+    document.getElementById('edit-modal').addEventListener('click', e => {
+        if (e.target === document.getElementById('edit-modal')) closeEditModal();
+    });
+    document.getElementById('edit-name').addEventListener('keydown', e => {
+        if (e.key === 'Enter') saveEdit();
+    });
+
+    loadCategories();
+</script>
+</body>
+</html>

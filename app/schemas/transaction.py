@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -11,9 +12,9 @@ from app.schemas.category import CategoryRead
 class TransactionCreate(BaseModel):
     amount: Decimal = Field(gt=0, decimal_places=2)
     type: TransactionType
-    description: str | None = Field(default=None, max_length=500)
+    description: Optional[str] = Field(default=None, max_length=500)
     date: date
-    category_id: int | None = None
+    category_id: Optional[int] = None
     tag_ids: list[int] = Field(default_factory=list)
 
     @field_validator("amount")
@@ -28,11 +29,11 @@ class TransactionRead(BaseModel):
     id: int
     amount: Decimal
     type: TransactionType
-    description: str | None
+    description: Optional[str]
     date: date
     user_id: int
-    category_id: int | None
-    category: CategoryRead | None
+    category_id: Optional[int]
+    category: Optional[CategoryRead]
     tags: list[TagRead]
     created_at: datetime
 
@@ -40,17 +41,17 @@ class TransactionRead(BaseModel):
 
 
 class TransactionUpdate(BaseModel):
-    amount: Decimal | None = Field(default=None, gt=0, decimal_places=2)
-    type: TransactionType | None = None
-    description: str | None = Field(default=None, max_length=500)
-    date: date | None = None
-    category_id: int | None = None
-    tag_ids: list[int] | None = None
+    amount: Optional[Decimal] = Field(default=None, gt=0, decimal_places=2)
+    type: Optional[TransactionType] = None
+    description: Optional[str] = Field(default=None, max_length=500)
+    date: Optional[date] = None
+    category_id: Optional[int] = None
+    tag_ids: Optional[list[int]] = None
 
 
 class TransactionFilter(BaseModel):
-    type: TransactionType | None = None
-    category_id: int | None = None
-    tag_id: int | None = None
-    date_from: date | None = None
-    date_to: date | None = None
+    type: Optional[TransactionType] = None
+    category_id: Optional[int] = None
+    tag_id: Optional[int] = None
+    date_from: Optional[date] = None
+    date_to: Optional[date] = None

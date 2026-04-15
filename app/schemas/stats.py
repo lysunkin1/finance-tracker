@@ -1,11 +1,12 @@
 from decimal import Decimal
+from typing import Optional
 
 from pydantic import BaseModel
 
 
 class CategoryStat(BaseModel):
-    category_id: int | None
-    category_name: str | None
+    category_id: Optional[int]
+    category_name: Optional[str]
     total: Decimal
     count: int
 

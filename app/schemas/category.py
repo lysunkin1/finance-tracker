@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -21,5 +22,5 @@ class CategoryRead(BaseModel):
 
 
 class CategoryUpdate(BaseModel):
-    name: str | None = Field(default=None, min_length=1, max_length=100)
-    type: TransactionType | None = None
+    name: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    type: Optional[TransactionType] = None

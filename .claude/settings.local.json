@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(C:/Users/ldgr1/PycharmProjects/pet_project/.venv/Scripts/python *)",
+      "Bash(C:/Users/ldgr1/PycharmProjects/pet_project/.venv/Scripts/pip index *)",
+      "Bash(.venv/Scripts/alembic upgrade *)",
+      "Bash(C:/Users/ldgr1/PycharmProjects/pet_project/.venv/Scripts/pip install *)",
+      "Bash(cmd.exe /c \"taskkill /F /PID 10408\")",
+      "Bash(netstat -ano)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8003/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8003/ui/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8003/ui/login.html)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8003/ui/transactions.html)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8003/docs)"
+    ]
+  }
+}

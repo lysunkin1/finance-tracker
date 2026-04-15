@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Tracker — Transactions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+<div id="nav"></div>
+
+<main class="ml-64 min-h-screen p-8">
+<div class="max-w-5xl mx-auto">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Transactions</h1>
+            <p class="text-gray-500 text-sm mt-0.5">Manage your income and expenses</p>
+        </div>
+        <button onclick="openModal()"
+            class="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm">
+            <span class="text-lg leading-none">+</span> Add Transaction
+        </button>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-5">
+        <div class="flex flex-wrap gap-3">
+            <select id="f-type" class="px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                <option value="">All Types</option>
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+            </select>
+            <select id="f-cat" class="px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                <option value="">All Categories</option>
+            </select>
+            <input type="date" id="f-from" placeholder="From"
+                class="px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <input type="date" id="f-to" placeholder="To"
+                class="px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button onclick="loadTransactions()"
+                class="px-4 py-2 bg-gray-800 text-white rounded-xl text-sm font-medium hover:bg-gray-900 transition-colors">
+                Apply
+            </button>
+            <button onclick="clearFilters()"
+                class="px-4 py-2 border border-gray-300 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors">
+                Clear
+            </button>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div id="tx-loading" class="hidden p-8 text-center text-gray-400 text-sm">Loading…</div>
+        <div id="tx-empty" class="hidden p-12 text-center">
+            <p class="text-4xl mb-3">💳</p>
+            <p class="text-gray-500 font-medium">No transactions found</p>
+            <p class="text-gray-400 text-sm mt-1">Add your first transaction to get started</p>
+        </div>
+        <table id="tx-table" class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-100">
+                <tr>
+                    <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Date</th>
+                    <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Description</th>
+                    <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Category</th>
+                    <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Tags</th>
+                    <th class="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Amount</th>
+                    <th class="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="tx-body" class="divide-y divide-gray-50"></tbody>
+        </table>
+    </div>
+
+</div>
+</main>
+
+<!-- Modal -->
+<div id="modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <div class="flex items-center justify-between p-6 border-b border-gray-100">
+            <h2 id="modal-title" class="text-lg font-bold text-gray-900">Add Transaction</h2>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+        </div>
+        <form id="modal-form" onsubmit="saveTransaction(event)" class="p-6 space-y-4">
+            <input type="hidden" id="edit-id">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Amount</label>
+                    <input type="number" id="f-amount" step="0.01" min="0.01" required placeholder="0.00"
+                        class="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Type</label>
+                    <select id="f-tx-type" required onchange="filterModalCategories()"
+                        class="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                        <option value="income">Income</option>
+                        <option value="expense">Expense</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Date</label>
+                <input type="date" id="f-date" required
+                    class="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Description <span class="text-gray-400">(optional)</span></label>
+                <input type="text" id="f-desc" placeholder="e.g. Monthly salary"
+                    class="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Category <span class="text-gray-400">(optional)</span></label>
+                <select id="f-category"
+                    class="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                    <option value="">No category</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Tags <span class="text-gray-400">(optional)</span></label>
+                <div id="tags-checkboxes" class="flex flex-wrap gap-2 p-3 border border-gray-300 rounded-xl min-h-[42px]">
+                    <span class="text-gray-400 text-sm">No tags available</span>
+                </div>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="closeModal()"
+                    class="flex-1 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" id="modal-save"
+                    class="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors">
+                    Save
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="/ui/js/api.js"></script>
+<script>
+    requireAuth();
+    renderNav('transactions');
+
+    let allCategories = [];
+    let allTags = [];
+
+    async function init() {
+        const [cats, tags] = await Promise.all([
+            api.get('/categories/'),
+            api.get('/tags/'),
+        ]);
+        allCategories = cats || [];
+        allTags = tags || [];
+
+        // Populate filter category select
+        const fc = document.getElementById('f-cat');
+        allCategories.forEach(c => {
+            const o = document.createElement('option');
+            o.value = c.id;
+            o.textContent = `${c.name} (${c.type})`;
+            fc.appendChild(o);
+        });
+
+        loadTransactions();
+    }
+
+    function clearFilters() {
+        document.getElementById('f-type').value = '';
+        document.getElementById('f-cat').value  = '';
+        document.getElementById('f-from').value = '';
+        document.getElementById('f-to').value   = '';
+        loadTransactions();
+    }
+
+    async function loadTransactions() {
+        const type  = document.getElementById('f-type').value;
+        const catId = document.getElementById('f-cat').value;
+        const from  = document.getElementById('f-from').value;
+        const to    = document.getElementById('f-to').value;
+
+        const params = new URLSearchParams();
+        if (type)  params.set('type', type);
+        if (catId) params.set('category_id', catId);
+        if (from)  params.set('date_from', from);
+        if (to)    params.set('date_to', to);
+        params.set('limit', '100');
+
+        try {
+            const txs = await api.get(`/transactions/?${params}`);
+            renderTable(txs || []);
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    }
+
+    function renderTable(txs) {
+        const body  = document.getElementById('tx-body');
+        const empty = document.getElementById('tx-empty');
+        const table = document.getElementById('tx-table');
+
+        if (!txs.length) {
+            table.classList.add('hidden');
+            empty.classList.remove('hidden');
+            return;
+        }
+        table.classList.remove('hidden');
+        empty.classList.add('hidden');
+
+        body.innerHTML = txs.map(tx => {
+            const isIncome = tx.type === 'income';
+            const tags = tx.tags.map(t =>
+                `<span class="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">${t.name}</span>`
+            ).join('');
+            return `
+            <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-5 py-3.5 text-sm text-gray-600 whitespace-nowrap">${tx.date}</td>
+                <td class="px-5 py-3.5 text-sm text-gray-800">${tx.description || '<span class="text-gray-400">—</span>'}</td>
+                <td class="px-5 py-3.5 text-sm text-gray-600">${tx.category?.name || '<span class="text-gray-400">—</span>'}</td>
+                <td class="px-5 py-3.5"><div class="flex flex-wrap gap-1">${tags || '<span class="text-gray-400 text-sm">—</span>'}</div></td>
+                <td class="px-5 py-3.5 text-right whitespace-nowrap">
+                    <span class="text-sm font-bold ${isIncome ? 'text-green-600' : 'text-red-500'}">
+                        ${isIncome ? '+' : '-'}$${fmt(tx.amount)}
+                    </span>
+                    <span class="ml-2 px-2 py-0.5 text-xs rounded-full font-medium ${isIncome ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}">
+                        ${tx.type}
+                    </span>
+                </td>
+                <td class="px-5 py-3.5 text-right whitespace-nowrap">
+                    <button onclick="editTransaction(${tx.id})" class="text-sm text-blue-600 hover:text-blue-800 font-medium mr-3">Edit</button>
+                    <button onclick="deleteTransaction(${tx.id})" class="text-sm text-red-500 hover:text-red-700 font-medium">Delete</button>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    function filterModalCategories() {
+        const type = document.getElementById('f-tx-type').value;
+        const sel  = document.getElementById('f-category');
+        const cur  = sel.value;
+        sel.innerHTML = '<option value="">No category</option>';
+        allCategories.filter(c => c.type === type).forEach(c => {
+            const o = document.createElement('option');
+            o.value = c.id;
+            o.textContent = c.name;
+            if (String(c.id) === cur) o.selected = true;
+            sel.appendChild(o);
+        });
+    }
+
+    function buildTagCheckboxes(selectedIds = []) {
+        const container = document.getElementById('tags-checkboxes');
+        if (!allTags.length) {
+            container.innerHTML = '<span class="text-gray-400 text-sm">No tags available — <a href="/ui/tags.html" class="underline text-blue-500">add tags</a></span>';
+            return;
+        }
+        container.innerHTML = allTags.map(t => `
+            <label class="flex items-center gap-1.5 px-2.5 py-1 rounded-full border cursor-pointer text-sm transition-colors
+                ${selectedIds.includes(t.id) ? 'bg-blue-100 border-blue-400 text-blue-700' : 'border-gray-200 text-gray-600 hover:border-blue-300'}">
+                <input type="checkbox" class="hidden" name="tag" value="${t.id}" ${selectedIds.includes(t.id) ? 'checked' : ''}>
+                ${t.name}
+            </label>
+        `).join('');
+        // Toggle style on click
+        container.querySelectorAll('label').forEach(lbl => {
+            lbl.addEventListener('click', () => {
+                const cb = lbl.querySelector('input');
+                setTimeout(() => {
+                    lbl.className = lbl.className.replace(/bg-\S+ border-blue-400 text-blue-700|border-gray-200 text-gray-600 hover:border-blue-300/g, '');
+                    lbl.className += cb.checked
+                        ? ' bg-blue-100 border-blue-400 text-blue-700'
+                        : ' border-gray-200 text-gray-600 hover:border-blue-300';
+                }, 0);
+            });
+        });
+    }
+
+    function openModal(tx = null) {
+        document.getElementById('modal-title').textContent = tx ? 'Edit Transaction' : 'Add Transaction';
+        document.getElementById('edit-id').value   = tx?.id   || '';
+        document.getElementById('f-amount').value  = tx?.amount || '';
+        document.getElementById('f-tx-type').value = tx?.type   || 'expense';
+        document.getElementById('f-date').value    = tx?.date   || new Date().toISOString().slice(0, 10);
+        document.getElementById('f-desc').value    = tx?.description || '';
+
+        filterModalCategories();
+        if (tx?.category_id) document.getElementById('f-category').value = tx.category_id;
+
+        buildTagCheckboxes(tx?.tags?.map(t => t.id) || []);
+        document.getElementById('modal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+        document.getElementById('modal').classList.add('hidden');
+    }
+
+    async function editTransaction(id) {
+        try {
+            const tx = await api.get(`/transactions/${id}`);
+            openModal(tx);
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    }
+
+    async function deleteTransaction(id) {
+        if (!confirm('Delete this transaction?')) return;
+        try {
+            await api.delete(`/transactions/${id}`);
+            showToast('Transaction deleted');
+            loadTransactions();
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    }
+
+    async function saveTransaction(e) {
+        e.preventDefault();
+        const id      = document.getElementById('edit-id').value;
+        const tagIds  = [...document.querySelectorAll('input[name="tag"]:checked')].map(cb => Number(cb.value));
+        const catVal  = document.getElementById('f-category').value;
+
+        const body = {
+            amount:      parseFloat(document.getElementById('f-amount').value),
+            type:        document.getElementById('f-tx-type').value,
+            date:        document.getElementById('f-date').value,
+            description: document.getElementById('f-desc').value || null,
+            category_id: catVal ? Number(catVal) : null,
+            tag_ids:     tagIds,
+        };
+
+        try {
+            if (id) {
+                await api.patch(`/transactions/${id}`, body);
+                showToast('Transaction updated');
+            } else {
+                await api.post('/transactions/', body);
+                showToast('Transaction added');
+            }
+            closeModal();
+            loadTransactions();
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    }
+
+    // Close modal on backdrop click
+    document.getElementById('modal').addEventListener('click', e => {
+        if (e.target === document.getElementById('modal')) closeModal();
+    });
+
+    init();
+</script>
+</body>
+</html>

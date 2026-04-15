@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.routers import auth, categories, stats, tags, transactions, users
 
@@ -25,6 +27,9 @@ app.include_router(transactions.router)
 app.include_router(stats.router)
 
 
-@app.get("/", tags=["Health"])
+@app.get("/", include_in_schema=False)
 async def root():
-    return {"status": "ok", "message": "Finance Tracker API is running"}
+    return RedirectResponse(url="/ui/")
+
+
+app.mount("/ui", StaticFiles(directory="frontend", html=True), name="frontend")
