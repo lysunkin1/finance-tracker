@@ -17,7 +17,7 @@ from app.database import Base  # noqa: F401
 from app.models import *  # noqa: F401, F403
 from app.config import settings
 
-config.set_main_option("sqlalchemy.url", settings.database_url)
+config.set_main_option("sqlalchemy.url", settings.async_database_url)
 
 target_metadata = Base.metadata
 
