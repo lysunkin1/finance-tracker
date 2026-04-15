@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.Python
+env/
+venv/
+.venv/
+ENV/
+
+# Distribution / packaging
+.eggs/
+dist/
+build/
+*.egg-info/
+
+# Environment variables
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Alembic
+alembic/versions/*.py
+!alembic/versions/.gitkeep
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
